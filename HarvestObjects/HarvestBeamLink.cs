@@ -19,6 +19,8 @@ namespace HarvestHelpers.HarvestObjects
 
         public override void Draw()
         {
+            if (!MapController.DrawLinks)
+                return;
             var pos1 = MapController.GridPosToMapPos(BeamStart);
             var pos2 = MapController.GridPosToMapPos(EndStart);
             MapController.DrawLine(pos1, pos2, 1, EnergyColor);

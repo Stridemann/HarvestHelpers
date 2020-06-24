@@ -4,7 +4,7 @@ namespace HarvestHelpers
 {
     public static class Constants
     {
-        private const float GRID_STEP = 11.2f;
+        public const float GRID_STEP = 11.2f;
         private const float GRID_BORDER = GRID_STEP * 1.5f;
         public const float IMAGE_CUTOFF_LEFT = 166 - GRID_BORDER; //(16,8) = 149,2
         public const float IMAGE_CUTOFF_BOT = 166 - GRID_BORDER;
@@ -13,7 +13,8 @@ namespace HarvestHelpers
         public static Color Blue = Color.SkyBlue;
         public static Color Purple = Color.Purple;
         public static Color Yellow = Color.Yellow;
-        public static Color Neutral = Color.Gray;
+        public static Color Neutral = Color.Red;
         public static Color OutOfRange = Color.Red;
+        public static Color Highlighted = Color.Azure;
     }
 }

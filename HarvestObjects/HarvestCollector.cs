@@ -14,6 +14,8 @@ namespace HarvestHelpers.HarvestObjects
 
         public override void Draw()
         {
+            if (!MapController.DrawCollectors)
+                return;
             var drawPos = GetScreenDrawPos();
             MapController.DrawFrameOnMap(drawPos, 4.9f, 2, EnergyColor);
             MapController.DrawBoxOnMap(drawPos, 0.9f, EnergyColor);

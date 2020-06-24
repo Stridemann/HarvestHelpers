@@ -16,6 +16,12 @@ namespace HarvestHelpers
         private float _scale;
         private readonly string _bgImg;
         private Size _bmSize = new Size(42, 42);
+        public bool DrawDispensers { get; set; } = true;
+        public bool DrawPylons { get; set; } = true;
+        public bool DrawCollectors { get; set; } = true;
+        public bool DrawStorage { get; set; } = true;
+        public bool DrawLinks { get; set; } = true;
+        public bool DrawSeeds { get; set; } = true;
 
         public MapController(Graphics graphics, string directoryFullName)
         {
@@ -61,12 +67,14 @@ namespace HarvestHelpers
         }
 
 
-        public void DrawBoxOnMap(SharpDX.Vector2 screenPos, float size, Color color)
+        public RectangleF DrawBoxOnMap(SharpDX.Vector2 screenPos, float size, Color color)
         {
             var sizeScaled = size * _scale;
+            var rectangleF = new RectangleF(screenPos.X - sizeScaled / 2, screenPos.Y - sizeScaled / 2, sizeScaled, sizeScaled);
             _graphics.DrawBox(
-                new RectangleF(screenPos.X - sizeScaled / 2, screenPos.Y - sizeScaled / 2, sizeScaled, sizeScaled),
+                rectangleF,
                 color);
+            return rectangleF;
         }
 
         public void DrawFrameOnMap(SharpDX.Vector2 screenPos, float size, int border, Color color)

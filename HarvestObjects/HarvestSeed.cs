@@ -12,8 +12,16 @@ namespace HarvestHelpers.HarvestObjects
 
         public override void Draw()
         {
+            if (!MapController.DrawSeeds)
+                return;
             var drawPos = GetScreenDrawPos();
-            MapController.DrawBoxOnMap(drawPos, 0.5f, Color.White);
+            var color = Color.White;
+            if (IsHatched)
+                color = Color.Gray;
+            else if (IsReadyToHatch)
+                color = Color.LightGreen;
+
+            MapController.DrawBoxOnMap(drawPos, 0.5f, color);
         }
     }
 }

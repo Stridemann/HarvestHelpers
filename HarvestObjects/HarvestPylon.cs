@@ -14,6 +14,8 @@ namespace HarvestHelpers.HarvestObjects
 
         public override void Draw()
         {
+            if (!MapController.DrawPylons)
+                return;
             var drawPos = GetScreenDrawPos();
             MapController.DrawBoxOnMap(drawPos, 0.3f, EnergyColor);
         }

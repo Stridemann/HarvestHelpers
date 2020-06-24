@@ -1,4 +1,5 @@
-﻿using ExileCore.Shared.Attributes;
+﻿using System.Windows.Forms;
+using ExileCore.Shared.Attributes;
 using ExileCore.Shared.Interfaces;
 using ExileCore.Shared.Nodes;
 
@@ -15,5 +16,11 @@ namespace HarvestHelpers
         public float PosY { get; set; } = 100;
         public float Width { get; set; } = 500;
         public float Height { get; set; } = 500;
+
+        [Menu("Fix Out Of Screen (lost window)")]
+        public ButtonNode FixOutOfScreen { get; set; } = new ButtonNode();
+
+        [Menu("Hide toggle")]
+        public HotkeyNode Toggle { get; set; } = new HotkeyNode(Keys.Oemtilde);
     }
 }
