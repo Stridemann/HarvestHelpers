@@ -9,19 +9,20 @@ namespace HarvestHelpers.HarvestObjects
         public HarvestSeed(Entity entity, MapController mapController) : base(entity, mapController)
         {
         }
+        public override string ObjectName { get; } = "Seed";
 
         public override void Draw()
         {
-            if (!MapController.DrawSeeds)
+            if (!MapController.Settings.DrawSeeds)
                 return;
-            var drawPos = GetScreenDrawPos();
+
             var color = Color.White;
             if (IsHatched)
                 color = Color.Gray;
             else if (IsReadyToHatch)
                 color = Color.LightGreen;
 
-            MapController.DrawBoxOnMap(drawPos, 0.5f, color);
+            MapController.DrawBoxOnMap(ScreenDrawPos, 0.5f, color);
         }
     }
 }

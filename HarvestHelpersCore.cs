@@ -1,6 +1,9 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using System.Windows.Forms;
+using System.Xml;
 using ExileCore;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
@@ -19,18 +22,21 @@ namespace HarvestHelpers
         private readonly ConcurrentDictionary<uint, HarvestObject> _objects =
             new ConcurrentDictionary<uint, HarvestObject>();
 
+        private readonly Vector2 _defaultGroveCenter = new Vector2(379, 402); //Default pos of Metadata/Terrain/Leagues/Harvest/Objects/SoulTree on The Sacred Grove
+        private Vector2 _groveCenter;//Current pos of Metadata/Terrain/Leagues/Harvest/Objects/SoulTree
+
         private MapController _mapController;
-        private bool _isOnMap;
         private readonly Stopwatch _updateStopwatch = Stopwatch.StartNew();
-        private bool _opened = true;
+        private readonly StringBuilder _errorStringBuilder = new StringBuilder();
+
 
         public override bool Initialise()
         {
-            _mapController = new MapController(Graphics, DirectoryFullName);
-            _isOnMap = GameController.Area.CurrentArea.Name == "The Sacred Grove";
+            _mapController = new MapController(Graphics, DirectoryFullName, Settings);
             Input.RegisterKey(Keys.LButton);
             Input.RegisterKey(Settings.Toggle.Value);
             Settings.FixOutOfScreen.OnPressed += FixOutOfScreen;
+            ResetCenter();
             return true;
         }
 
@@ -40,22 +46,29 @@ namespace HarvestHelpers
             Settings.Width = Settings.Height = 500;
         }
 
+        private void ResetCenter()
+        {
+            _groveCenter = new Vector2(Single.MinValue, Single.MinValue);
+            _mapController.CoordsOffset = Vector2.Zero;
+        }
 
         public override void AreaChange(AreaInstance area)
         {
-            _isOnMap = area.Name == "The Sacred Grove";
+            ResetCenter();
         }
 
 
         public override void Render()
         {
-            if (!_isOnMap)
+            var isOnMap = Vector2.Distance(GameController.Player.GridPos, _groveCenter) < 400;
+            if (!isOnMap)
                 return;
-
+            
             if (Settings.Toggle.PressedOnce())
-                _opened = !_opened;
+                Settings.IsShown = !Settings.IsShown;
 
-            if (!_opened)
+            UpdateAndValidate();
+            if (!Settings.IsShown)
             {
                 Graphics.DrawText($"HarvestHelpers is hidden. Press '{Settings.Toggle.Value}' to show window",
                     new nuVector2(500, 5), Color.Gray);
@@ -68,7 +81,7 @@ namespace HarvestHelpers
             ImGui.SetNextWindowPos(new nuVector2(Settings.PosX, Settings.PosY), ImGuiCond.Once, nuVector2.Zero);
             ImGui.SetNextWindowSize(new nuVector2(Settings.Width - 20, Settings.Height), ImGuiCond.Always);
 
-
+            var _opened = true;
             if (ImGui.Begin($"{Name}", ref _opened,
                 ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoBackground |
                 //ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | 
@@ -109,16 +122,25 @@ namespace HarvestHelpers
             _mapController.DrawBoxOnMap(drawPos, 0.8f, Color.Red);
 
             foreach (var harvestObject in _objects.Values)
-                harvestObject.Draw();
+                harvestObject.DrawObject();
+            
+            DrawControls();
+        }
 
+        private void UpdateAndValidate()
+        {
             if (_updateStopwatch.ElapsedMilliseconds > Settings.UpdateDelayMs.Value)
             {
                 _updateStopwatch.Restart();
+                _errorStringBuilder.Clear();
                 foreach (var harvestObject in _objects.Values)
-                    harvestObject.Update();
+                    harvestObject.Update(_errorStringBuilder);
             }
 
-            DrawControls();
+            if (_errorStringBuilder.Length > 0)
+                Graphics.DrawText(_errorStringBuilder.ToString(),
+                    new nuVector2(10, 200),
+                    Color.Red);
         }
 
         private bool _mouseDown;
@@ -148,22 +170,22 @@ namespace HarvestHelpers
             _mapController.DrawTextOnMap("Hide layer", buttonPos, Color.White, 15, FontAlign.Center);
 
             buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY));
-            _mapController.DrawPylons = DrawButton("P", buttonPos, _mapController.DrawPylons);
+            Settings.DrawPylons = DrawButton("P", buttonPos, Settings.DrawPylons);
 
             buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP));
-            _mapController.DrawCollectors = DrawButton("C", buttonPos, _mapController.DrawCollectors);
+            Settings.DrawCollectors = DrawButton("C", buttonPos, Settings.DrawCollectors);
 
             buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP * 2));
-            _mapController.DrawDispensers = DrawButton("D", buttonPos, _mapController.DrawDispensers);
+            Settings.DrawDispensers = DrawButton("D", buttonPos, Settings.DrawDispensers);
 
             buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP * 3));
-            _mapController.DrawStorage = DrawButton("S", buttonPos, _mapController.DrawStorage);
+            Settings.DrawStorage = DrawButton("S", buttonPos, Settings.DrawStorage);
 
             buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP * 4));
-            _mapController.DrawLinks = DrawButton("/", buttonPos, _mapController.DrawLinks);
+            Settings.DrawLinks = DrawButton("/", buttonPos, Settings.DrawLinks);
 
             buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP * 5));
-            _mapController.DrawSeeds = DrawButton("O", buttonPos, _mapController.DrawSeeds);
+            Settings.DrawSeeds = DrawButton("O", buttonPos, Settings.DrawSeeds);
         }
 
         private bool DrawButton(string name, Vector2 pos, bool value)
@@ -191,12 +213,18 @@ namespace HarvestHelpers
                 _objects[entity.Id] = new HarvestTank(entity, _mapController);
             else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/Extractor")
                 _objects[entity.Id] = new HarvestCollector(entity, _mapController);
-            else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/Irrigator")
+            else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/Irrigator"
+            ) //TODO: Check current_state is not 0 (available_fluid required_fluid). auto_irrigating is 1
                 _objects[entity.Id] = new HarvestDispenser(entity, _mapController);
             else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/Pole")
                 _objects[entity.Id] = new HarvestPylon(entity, _mapController);
             else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/HarvestPipeBeamEffect")
                 _objects[entity.Id] = new HarvestBeamLink(entity, _mapController);
+            else if (entity.Path == "Metadata/Terrain/Leagues/Harvest/Objects/SoulTree")
+            {
+                _groveCenter = entity.GridPos;
+                _mapController.CoordsOffset = _groveCenter - _defaultGroveCenter;
+            }
         }
 
         public override void EntityRemoved(Entity entity)

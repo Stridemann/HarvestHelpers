@@ -7,6 +7,7 @@ namespace HarvestHelpers.HarvestObjects
 {
     public class HarvestPylon : HarvestObject
     {
+        public override string ObjectName { get; } = "Pylon";
         public HarvestPylon(Entity entity, MapController mapController) : base(entity, mapController)
         {
             entity.GetComponent<Beam>();
@@ -14,10 +15,10 @@ namespace HarvestHelpers.HarvestObjects
 
         public override void Draw()
         {
-            if (!MapController.DrawPylons)
+            if (!MapController.Settings.DrawPylons)
                 return;
-            var drawPos = GetScreenDrawPos();
-            MapController.DrawBoxOnMap(drawPos, 0.3f, EnergyColor);
+
+            MapController.DrawBoxOnMap(ScreenDrawPos, 0.3f, EnergyColor);
         }
     }
 }

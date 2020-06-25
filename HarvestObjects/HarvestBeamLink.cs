@@ -17,9 +17,11 @@ namespace HarvestHelpers.HarvestObjects
             EndStart = beam.BeamEnd.WorldToGrid();
         }
 
+        public override string ObjectName { get; } = "Link";
+
         public override void Draw()
         {
-            if (!MapController.DrawLinks)
+            if (!MapController.Settings.DrawLinks)
                 return;
             var pos1 = MapController.GridPosToMapPos(BeamStart);
             var pos2 = MapController.GridPosToMapPos(EndStart);

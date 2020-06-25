@@ -12,14 +12,16 @@ namespace HarvestHelpers.HarvestObjects
         {
         }
 
+
+        public override string ObjectName { get; } = "Collector";
         public override void Draw()
         {
-            if (!MapController.DrawCollectors)
+            if (!MapController.Settings.DrawCollectors)
                 return;
-            var drawPos = GetScreenDrawPos();
-            MapController.DrawFrameOnMap(drawPos, 4.9f, 2, EnergyColor);
-            MapController.DrawBoxOnMap(drawPos, 0.9f, EnergyColor);
-            MapController.DrawTextOnMap("C", drawPos, Color.Black, 150, FontAlign.Center);
+
+            MapController.DrawFrameOnMap(ScreenDrawPos, 4.9f, 2, EnergyColor);
+            MapController.DrawBoxOnMap(ScreenDrawPos, 0.9f, EnergyColor);
+            MapController.DrawTextOnMap("C", ScreenDrawPos, Color.Black, 150, FontAlign.Center);
         }
     }
 }

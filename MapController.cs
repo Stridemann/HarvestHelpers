@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
+using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
 using Color = SharpDX.Color;
 using Graphics = ExileCore.Graphics;
@@ -16,16 +17,15 @@ namespace HarvestHelpers
         private float _scale;
         private readonly string _bgImg;
         private Size _bmSize = new Size(42, 42);
-        public bool DrawDispensers { get; set; } = true;
-        public bool DrawPylons { get; set; } = true;
-        public bool DrawCollectors { get; set; } = true;
-        public bool DrawStorage { get; set; } = true;
-        public bool DrawLinks { get; set; } = true;
-        public bool DrawSeeds { get; set; } = true;
-
-        public MapController(Graphics graphics, string directoryFullName)
+        //all the coords was hardcoded to work on The Sacred Grove.
+        //But in other maps we have Grove map in other part of nav.
+        //So we gonna calculate that difference in coords according to Metadata/Terrain/Leagues/Harvest/Objects/SoulTree
+        public SharpDX.Vector2 CoordsOffset { get; set; }
+        public Settings Settings { get; }
+        public MapController(Graphics graphics, string directoryFullName, Settings settings)
         {
             _graphics = graphics;
+            Settings = settings;
             _bgImg = Path.Combine(directoryFullName, "BgImage.png");
             _graphics.InitImage(_bgImg, false);
         }
@@ -102,6 +102,7 @@ namespace HarvestHelpers
 
         public SharpDX.Vector2 GridPosToMapPos(SharpDX.Vector2 gridPos)
         {
+            gridPos -= CoordsOffset;
             gridPos.X -= Constants.IMAGE_CUTOFF_LEFT;
             gridPos.Y -= Constants.IMAGE_CUTOFF_BOT;
 

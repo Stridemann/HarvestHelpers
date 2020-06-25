@@ -1,4 +1,4 @@
-﻿using ExileCore.PoEMemory.Components;
+﻿using System;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
 using HarvestHelpers.HarvestObjects.Base;
@@ -14,12 +14,30 @@ namespace HarvestHelpers.HarvestObjects
 
         public override void Draw()
         {
-            if (!MapController.DrawDispensers)
+            if (!MapController.Settings.DrawDispensers)
                 return;
-            var drawPos = GetScreenDrawPos();
-            MapController.DrawFrameOnMap(drawPos, 4.9f, 2, EnergyColor);
-            MapController.DrawBoxOnMap(drawPos, 0.8f, EnergyColor);
-            MapController.DrawTextOnMap("D", drawPos, Color.Black, 150, FontAlign.Center);
+
+            MapController.DrawFrameOnMap(ScreenDrawPos, 4.9f, 2, EnergyColor);
+            MapController.DrawBoxOnMap(ScreenDrawPos, 0.8f, EnergyColor);
+            MapController.DrawTextOnMap("D", ScreenDrawPos, Color.Black, 15, FontAlign.Center);
+        }
+
+        public override string ObjectName { get; } = "Dispenser";
+
+        public override string Validate()
+        {
+            var error = string.Empty;
+
+            if (CurrentState == 0 && RequiredFluid != 0 && RequiredFluid < AvailableFluid)
+            {
+                error = "Turned off";
+            }
+            else if (!AutoIrrigating)
+            {
+                error = "Auto-disperse off";
+            }
+
+            return error;
         }
     }
 }

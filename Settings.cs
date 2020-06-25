@@ -22,5 +22,13 @@ namespace HarvestHelpers
 
         [Menu("Hide toggle")]
         public HotkeyNode Toggle { get; set; } = new HotkeyNode(Keys.Oemtilde);
+        public bool IsShown { get; set; }
+
+        public bool DrawDispensers { get; set; } = true;
+        public bool DrawPylons { get; set; } = true;
+        public bool DrawCollectors { get; set; } = true;
+        public bool DrawStorage { get; set; } = true;
+        public bool DrawLinks { get; set; } = true;
+        public bool DrawSeeds { get; set; } = true;
     }
 }
