@@ -166,25 +166,25 @@ namespace HarvestHelpers
             const float posX = 580 + Constants.GRID_STEP;
             const float posY = 315 - Constants.GRID_STEP;
 
-            var buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY + Constants.GRID_STEP));
+            var buttonPos = new Vector2(Settings.PosX + 30, Settings.PosY + 30);
             _mapController.DrawTextOnMap("Hide layer", buttonPos, Color.White, 15, FontAlign.Center);
 
-            buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY));
+            buttonPos.Y += 20;
             Settings.DrawPylons = DrawButton("P", buttonPos, Settings.DrawPylons);
 
-            buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP));
+            buttonPos.Y += 20;
             Settings.DrawCollectors = DrawButton("C", buttonPos, Settings.DrawCollectors);
 
-            buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP * 2));
+            buttonPos.Y += 20;
             Settings.DrawDispensers = DrawButton("D", buttonPos, Settings.DrawDispensers);
 
-            buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP * 3));
+            buttonPos.Y += 20;
             Settings.DrawStorage = DrawButton("S", buttonPos, Settings.DrawStorage);
 
-            buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP * 4));
+            buttonPos.Y += 20;
             Settings.DrawLinks = DrawButton("/", buttonPos, Settings.DrawLinks);
 
-            buttonPos = _mapController.GridPosToMapPos(new Vector2(posX, posY - Constants.GRID_STEP * 5));
+            buttonPos.Y += 20;
             Settings.DrawSeeds = DrawButton("O", buttonPos, Settings.DrawSeeds);
         }
 
