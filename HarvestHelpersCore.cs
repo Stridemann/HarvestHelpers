@@ -5,6 +5,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using ExileCore;
+using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
 using HarvestHelpers.HarvestObjects;
@@ -22,13 +23,29 @@ namespace HarvestHelpers
         private readonly ConcurrentDictionary<uint, HarvestObject> _objects =
             new ConcurrentDictionary<uint, HarvestObject>();
 
-        private readonly Vector2 _defaultGroveCenter = new Vector2(379, 402); //Default pos of Metadata/Terrain/Leagues/Harvest/Objects/SoulTree on The Sacred Grove
-        private Vector2 _groveCenter;//Current pos of Metadata/Terrain/Leagues/Harvest/Objects/SoulTree
+        private readonly Vector2
+            _defaultGroveCenter =
+                new Vector2(379,
+                    402); //Default pos of Metadata/Terrain/Leagues/Harvest/Objects/SoulTree on The Sacred Grove
+
+        private Vector2 _groveCenter; //Current pos of Metadata/Terrain/Leagues/Harvest/Objects/SoulTree
 
         private MapController _mapController;
         private readonly Stopwatch _updateStopwatch = Stopwatch.StartNew();
         private readonly StringBuilder _errorStringBuilder = new StringBuilder();
+        private readonly long[] _availableFluid = new long[3];
+        private readonly long[] _requiredFluid = new long[3];
+        private readonly Color[] _fluidColors;
 
+        public HarvestHelpersCore()
+        {
+            _fluidColors = new[]
+            {
+                Constants.Purple,
+                Constants.Yellow,
+                Constants.Blue,
+            };
+        }
 
         public override bool Initialise()
         {
@@ -63,11 +80,13 @@ namespace HarvestHelpers
             var isOnMap = Vector2.Distance(GameController.Player.GridPos, _groveCenter) < 400;
             if (!isOnMap)
                 return;
-            
+
             if (Settings.Toggle.PressedOnce())
                 Settings.IsShown = !Settings.IsShown;
 
             UpdateAndValidate();
+            CheckCraftWindow();
+
             if (!Settings.IsShown)
             {
                 Graphics.DrawText($"HarvestHelpers is hidden. Press '{Settings.Toggle.Value}' to show window",
@@ -107,6 +126,33 @@ namespace HarvestHelpers
             ImGui.End();
         }
 
+        private void CheckCraftWindow()
+        {
+            var craftWindow = GameController.Game.IngameState.IngameUi.ReadObjectAt<Element>(0x790);
+            if (!craftWindow.IsVisible)
+                return;
+
+            var craftList = craftWindow.ReadObjectAt<Element>(0x2A8);
+
+            foreach (var craftListChild in craftList.Children)
+            {
+                if (craftListChild.ChildCount < 4)
+                    continue;
+
+                var craftTest = craftListChild[3].Text;
+
+                if (!craftTest.StartsWith("<white>{Reforge}") && !craftTest.StartsWith("<white>{Remove}") &&
+                    !craftTest.StartsWith("<white>{Randomise}"))
+                {
+                    var clientRect = craftWindow.GetClientRect();
+                    Graphics.DrawText("Has craft that is not 'Reforge' or 'Remove'",
+                        clientRect.TopLeft, Color.Yellow, 20);
+
+                    Graphics.DrawFrame(clientRect, Color.Yellow, 1);
+                }
+            }
+        }
+
         private void DrawWindowContent()
         {
             var mapDrawFrame = new RectangleF(Settings.PosX, Settings.PosY + 20, Settings.Width,
@@ -123,7 +169,7 @@ namespace HarvestHelpers
 
             foreach (var harvestObject in _objects.Values)
                 harvestObject.DrawObject();
-            
+
             DrawControls();
         }
 
@@ -133,14 +179,48 @@ namespace HarvestHelpers
             {
                 _updateStopwatch.Restart();
                 _errorStringBuilder.Clear();
+
+                _availableFluid[0] = 0;
+                _availableFluid[1] = 0;
+                _availableFluid[2] = 0;
+                _requiredFluid[0] = 0;
+                _requiredFluid[1] = 0;
+                _requiredFluid[2] = 0;
+
                 foreach (var harvestObject in _objects.Values)
+                {
                     harvestObject.Update(_errorStringBuilder);
+
+                    var energyType = harvestObject.EnergyType - 1;
+                    if (energyType >= 0 && energyType < _availableFluid.Length)
+                        _availableFluid[energyType] += harvestObject.AvailableFluid;
+                    if (energyType >= 0 && energyType < _requiredFluid.Length)
+                        _requiredFluid[energyType] += harvestObject.RequiredFluid;
+                }
             }
 
             if (_errorStringBuilder.Length > 0)
                 Graphics.DrawText(_errorStringBuilder.ToString(),
                     new nuVector2(10, 200),
                     Color.Red);
+
+            var windowRectangle = GameController.Window.GetWindowRectangle();
+            var drawPos = new Vector2(windowRectangle.X + windowRectangle.Width / 2, windowRectangle.Height - 50);
+            var barWidth = 200f;
+
+            for (var i = 0; i < 3; i++)
+            {
+                var result = _availableFluid[i] - _requiredFluid[i];
+                var rect = new RectangleF(drawPos.X + (i - 1) * barWidth - barWidth / 2, drawPos.Y, barWidth - 2, 20);
+                var isFine = result > 0;
+
+                Graphics.DrawBox(rect, _fluidColors[i]);
+                Graphics.DrawFrame(rect, isFine ? Color.Green : Color.Red, 2);
+                var testPos = new nuVector2(rect.X + 5, rect.Y + 3);
+                var textSize = Graphics.DrawText($"{_availableFluid[i]} - {_requiredFluid[i]} = {result}",
+                    testPos, isFine ? Color.White : Color.Red);
+                Graphics.DrawBox(new RectangleF(testPos.X, testPos.Y, textSize.X, textSize.Y), Color.Black);
+            }
         }
 
         private bool _mouseDown;

@@ -26,6 +26,7 @@ namespace HarvestHelpers.HarvestObjects.Base
         public Vector2 GridPos { get; }
         public Vector2 ScreenDrawPos { get; private set; }
         public Color EnergyColor { get; set; } = Color.Red;
+        public long EnergyType { get; set; }
         public bool IsReadyToHatch { get; private set; }
         public bool IsHatched { get; private set; }
         public long FluidAmount { get; private set; }
@@ -79,7 +80,8 @@ namespace HarvestHelpers.HarvestObjects.Base
                         IsHatched = state.Value > 1;
                         break;
                     case "colour":
-                        switch (state.Value & int.MaxValue)
+                        EnergyType = state.Value & int.MaxValue;
+                        switch (EnergyType)
                         {
                             case 0:
                                 EnergyColor = Constants.Neutral;
