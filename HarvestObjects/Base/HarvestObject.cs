@@ -30,6 +30,7 @@ namespace HarvestHelpers.HarvestObjects.Base
         public bool IsReadyToHatch { get; private set; }
         public bool IsHatched { get; private set; }
         public long FluidAmount { get; private set; }
+        public long FluidCapacity { get; private set; }
         public long AvailableFluid { get; private set; }
         public long RequiredFluid { get; private set; }
         public long CurrentState { get; private set; }
@@ -68,6 +69,7 @@ namespace HarvestHelpers.HarvestObjects.Base
             AvailableFluid = 0;
             RequiredFluid = 0;
             CurrentState = 0;
+            FluidCapacity = 0;
             AutoIrrigating = false;
 
             foreach (var state in _states)
@@ -104,7 +106,9 @@ namespace HarvestHelpers.HarvestObjects.Base
                     case "fluid_amount":
                         FluidAmount = state.Value;
                         break;
-
+                    case "fluid_capacity":
+                        FluidCapacity = state.Value;
+                        break;
                     case "available_fluid":
                         AvailableFluid = state.Value;
                         break;
@@ -118,7 +122,6 @@ namespace HarvestHelpers.HarvestObjects.Base
                         AutoIrrigating = state.Value > 0;
                         break;
                 }
-
 
             var targetable = Entity.GetComponent<Targetable>();
             if (targetable != null && targetable.isTargeted)

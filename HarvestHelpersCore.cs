@@ -35,6 +35,8 @@ namespace HarvestHelpers
         private readonly StringBuilder _errorStringBuilder = new StringBuilder();
         private readonly long[] _availableFluid = new long[3];
         private readonly long[] _requiredFluid = new long[3];
+        private readonly long[] _fluidAmount = new long[3];
+        private readonly long[] _fluidCapacity = new long[3];
         private readonly Color[] _fluidColors;
 
         public HarvestHelpersCore()
@@ -186,16 +188,25 @@ namespace HarvestHelpers
                 _requiredFluid[0] = 0;
                 _requiredFluid[1] = 0;
                 _requiredFluid[2] = 0;
+                _fluidAmount[0] = 0;
+                _fluidAmount[1] = 0;
+                _fluidAmount[2] = 0;
+                _fluidCapacity[0] = 0;
+                _fluidCapacity[1] = 0;
+                _fluidCapacity[2] = 0;
 
                 foreach (var harvestObject in _objects.Values)
                 {
                     harvestObject.Update(_errorStringBuilder);
 
                     var energyType = harvestObject.EnergyType - 1;
-                    if (energyType >= 0 && energyType < _availableFluid.Length)
+                    if (energyType >= 0 && energyType < 3)
+                    {
                         _availableFluid[energyType] += harvestObject.AvailableFluid;
-                    if (energyType >= 0 && energyType < _requiredFluid.Length)
                         _requiredFluid[energyType] += harvestObject.RequiredFluid;
+                        _fluidAmount[energyType] += harvestObject.FluidAmount;
+                        _fluidCapacity[energyType] += harvestObject.FluidCapacity;
+                    }
                 }
             }
 
@@ -214,12 +225,25 @@ namespace HarvestHelpers
                 var rect = new RectangleF(drawPos.X + (i - 1) * barWidth - barWidth / 2, drawPos.Y, barWidth - 2, 20);
                 var isFine = result > 0;
 
-                Graphics.DrawBox(rect, _fluidColors[i]);
-                Graphics.DrawFrame(rect, isFine ? Color.Green : Color.Red, 2);
-                var testPos = new nuVector2(rect.X + 5, rect.Y + 3);
-                var textSize = Graphics.DrawText($"{_availableFluid[i]} - {_requiredFluid[i]} = {result}",
+                Graphics.DrawBox(rect, Color.DimGray);
+
+                var progressDelta = (float) _fluidAmount[i] / _fluidCapacity[i];
+                var progressRect = rect;
+                progressRect.Width = rect.Width * progressDelta;
+                Graphics.DrawBox(progressRect, _fluidColors[i]);
+
+                //Graphics.DrawFrame(rect, isFine ? Color.Green : Color.Red, 2);
+
+                var testPos = new nuVector2(rect.X + 5, rect.Y - 15);
+                var textSize = Graphics.DrawText($"Available: {_availableFluid[i]} Required:{_requiredFluid[i]}",
                     testPos, isFine ? Color.White : Color.Red);
                 Graphics.DrawBox(new RectangleF(testPos.X, testPos.Y, textSize.X, textSize.Y), Color.Black);
+
+                var center = rect.Center;
+                testPos = new nuVector2(center.X, center.Y - 7);
+                textSize = Graphics.DrawText($"Fill: {progressDelta:P1} ({_fluidAmount[i]} of {_fluidCapacity[i]})", testPos, isFine ? Color.White : Color.Red, 15, FontAlign.Center);
+                Graphics.DrawBox(new RectangleF(testPos.X - textSize.X / 2 - 5, testPos.Y, textSize.X + 10, textSize.Y), Color.Black);
+
             }
         }
 
@@ -241,10 +265,6 @@ namespace HarvestHelpers
             {
                 _mouseDown = false;
             }
-
-
-            const float posX = 580 + Constants.GRID_STEP;
-            const float posY = 315 - Constants.GRID_STEP;
 
             var buttonPos = new Vector2(Settings.PosX + 30, Settings.PosY + 30);
             _mapController.DrawTextOnMap("Hide layer", buttonPos, Color.White, 15, FontAlign.Center);
