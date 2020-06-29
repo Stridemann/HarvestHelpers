@@ -6,8 +6,10 @@ using System.Windows.Forms;
 using System.Xml;
 using ExileCore;
 using ExileCore.PoEMemory;
+using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using HarvestHelpers.HarvestObjects;
 using HarvestHelpers.HarvestObjects.Base;
 using ImGuiNET;
@@ -79,9 +81,12 @@ namespace HarvestHelpers
 
         public override void Render()
         {
+            DrawInventSeeds();
             var isOnMap = Vector2.Distance(GameController.Player.GridPos, _groveCenter) < 400;
             if (!isOnMap)
+            {
                 return;
+            }
 
             if (Settings.Toggle.PressedOnce())
                 Settings.IsShown = !Settings.IsShown;
@@ -152,6 +157,74 @@ namespace HarvestHelpers
 
                     Graphics.DrawFrame(clientRect, Color.Yellow, 1);
                 }
+            }
+        }
+
+        private readonly Stopwatch _inventSeedsDelayStopwatch = Stopwatch.StartNew();
+        private readonly int[] _inventSeeds = new int[3 * 4];
+
+        private void DrawInventSeeds()
+        {
+            var skillRect = GameController.Game.IngameState.IngameUi.SkillBar.GetClientRect();
+            var drawRect = skillRect;
+            drawRect.Width = 50;
+            drawRect.Height = 20;
+            drawRect.Y -= 40;
+            drawRect.X += 100;
+
+            for (var i = 0; i < 3; i++)
+            {
+                Graphics.DrawBox(drawRect, _fluidColors[i]);
+                Graphics.DrawText(_inventSeeds[i].ToString(), drawRect.Center.Translate(0, -6), Color.Black,
+                    FontAlign.Center);
+                drawRect.X += drawRect.Width;
+            }
+
+            if (_inventSeedsDelayStopwatch.ElapsedMilliseconds < 2000)
+                return;
+            _inventSeedsDelayStopwatch.Restart();
+
+            var items =
+                GameController.Game.IngameState.ServerData.GetPlayerInventoryBySlot(InventorySlotE.MainInventory1);
+
+            _inventSeeds[0] = 0;
+            _inventSeeds[1] = 0;
+            _inventSeeds[2] = 0; //just for T1
+
+            foreach (var item in items.Items)
+            {
+                var metadata = item.Metadata;
+                if (!metadata.StartsWith("Metadata/Items/Harvest/HarvestSeed"))
+                    continue;
+
+                var endsIndex = metadata.LastIndexOf('T');
+                if (endsIndex == -1)
+                    continue;
+
+                var tier = int.Parse(metadata[endsIndex + 1].ToString());
+                if (tier < 1 || tier > 4)
+                    continue;
+
+                if (tier != 1) //remove this if you gonna add T2 and T3 etc
+                    continue;
+
+                var colorStr = metadata.Substring(endsIndex + 2);
+                var color = -1;
+                if (colorStr == "Red")
+                    color = 0;
+                else if (colorStr == "Green")
+                    color = 1;
+                else if (colorStr == "Blue")
+                    color = 2;
+
+                if (color == -1)
+                    continue;
+
+                var stack = item.GetComponent<Stack>();
+                if (stack == null)
+                    continue;
+
+                _inventSeeds[color] += stack.Size;
             }
         }
 
@@ -241,9 +314,10 @@ namespace HarvestHelpers
 
                 var center = rect.Center;
                 testPos = new nuVector2(center.X, center.Y - 7);
-                textSize = Graphics.DrawText($"Fill: {progressDelta:P1} ({_fluidAmount[i]} of {_fluidCapacity[i]})", testPos, isFine ? Color.White : Color.Red, 15, FontAlign.Center);
-                Graphics.DrawBox(new RectangleF(testPos.X - textSize.X / 2 - 5, testPos.Y, textSize.X + 10, textSize.Y), Color.Black);
-
+                textSize = Graphics.DrawText($"Fill: {progressDelta:P1} ({_fluidAmount[i]} of {_fluidCapacity[i]})",
+                    testPos, isFine ? Color.White : Color.Red, 15, FontAlign.Center);
+                Graphics.DrawBox(new RectangleF(testPos.X - textSize.X / 2 - 5, testPos.Y, textSize.X + 10, textSize.Y),
+                    Color.Black);
             }
         }
 
