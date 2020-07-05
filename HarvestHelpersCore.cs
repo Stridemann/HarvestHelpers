@@ -318,7 +318,7 @@ namespace HarvestHelpers
 
             var windowRectangle = GameController.Window.GetWindowRectangle();
             var drawPos = new Vector2(windowRectangle.X + windowRectangle.Width / 2, windowRectangle.Height - 50);
-            var barWidth = 200f;
+            var barWidth = Settings.StorageBoxWidth;
 
             for (var i = 0; i < 3; i++)
             {
@@ -327,6 +327,9 @@ namespace HarvestHelpers
                 var isFine = result > 0;
 
                 Graphics.DrawBox(rect, Color.DimGray);
+
+                // Nice to know what color it is if no progress bar
+                Graphics.DrawFrame(rect, _fluidColors[i], 1);
 
                 var progressDelta = (float) _fluidAmount[i] / _fluidCapacity[i];
                 var progressRect = rect;
