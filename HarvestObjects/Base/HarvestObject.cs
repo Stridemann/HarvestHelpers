@@ -34,7 +34,7 @@ namespace HarvestHelpers.HarvestObjects.Base
         public long AvailableFluid { get; private set; }
         public long RequiredFluid { get; private set; }
         public long CurrentState { get; private set; }
-        public bool AutoIrrigating { get; private set; }
+        //public bool AutoIrrigating { get; private set; }
 
         public void Update(StringBuilder sb)
         {
@@ -70,7 +70,7 @@ namespace HarvestHelpers.HarvestObjects.Base
             RequiredFluid = 0;
             CurrentState = 0;
             FluidCapacity = 0;
-            AutoIrrigating = false;
+            //AutoIrrigating = false;
 
             foreach (var state in _states)
                 switch (state.Name)
@@ -118,9 +118,9 @@ namespace HarvestHelpers.HarvestObjects.Base
                     case "current_state":
                         CurrentState = state.Value;
                         break;
-                    case "auto_irrigating":
-                        AutoIrrigating = state.Value > 0;
-                        break;
+                    //case "auto_irrigating":
+                    //    AutoIrrigating = state.Value > 0;
+                    //    break;
                 }
 
             var targetable = Entity.GetComponent<Targetable>();

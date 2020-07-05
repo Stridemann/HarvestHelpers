@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
@@ -41,6 +43,8 @@ namespace HarvestHelpers
         private readonly long[] _fluidCapacity = new long[3];
         private readonly Color[] _fluidColors;
 
+        private readonly List<Tuple<string, string, Color>> _craftListHighlight;
+
         public HarvestHelpersCore()
         {
             _fluidColors = new[]
@@ -48,6 +52,12 @@ namespace HarvestHelpers
                 Constants.Purple,
                 Constants.Yellow,
                 Constants.Blue,
+            };
+
+            _craftListHighlight = new List<Tuple<string, string, Color>>
+            {
+                new Tuple<string, string, Color>("<white>{Change} a <white>{Unique}", "Roll unique", Color.Orange),
+                new Tuple<string, string, Color>("<white>{Randomise} the numeric values", "Randomize values", Color.White),
             };
         }
 
@@ -139,25 +149,43 @@ namespace HarvestHelpers
             if (!craftWindow.IsVisible)
                 return;
 
-            var craftList = craftWindow.ReadObjectAt<Element>(0x2A8);
+            var craftWindowRect = craftWindow.GetClientRect();
+            var drawTextPos = craftWindowRect.TopRight;
 
+            var craftList = craftWindow.ReadObjectAt<Element>(0x2A8);
+            //var dumpSb = new StringBuilder();
+            var drawFrame = false;
             foreach (var craftListChild in craftList.Children)
             {
                 if (craftListChild.ChildCount < 4)
                     continue;
 
-                var craftTest = craftListChild[3].Text;
+                var craftText = craftListChild[3].Text;
+                //dumpSb.AppendLine(craftText);
 
-                if (!craftTest.StartsWith("<white>{Reforge}") && !craftTest.StartsWith("<white>{Remove}") &&
-                    !craftTest.StartsWith("<white>{Randomise}"))
+                foreach (var tuple in _craftListHighlight)
                 {
-                    var clientRect = craftWindow.GetClientRect();
-                    Graphics.DrawText("Has craft that is not 'Reforge' or 'Remove'",
-                        clientRect.TopLeft, Color.Yellow, 20);
+                    if (craftText.StartsWith(tuple.Item1))
+                    {
+                        drawFrame = true;
+                        Graphics.DrawText(tuple.Item2, drawTextPos, tuple.Item3, 20);
+                        drawTextPos.Y += 20;
+                    }
+                }
 
-                    Graphics.DrawFrame(clientRect, Color.Yellow, 1);
+                if (!craftText.StartsWith("<white>{Reforge}") && !craftText.StartsWith("<white>{Remove}") &&
+                    !craftText.StartsWith("<white>{Randomise}"))
+                {
+                    drawFrame = true;
                 }
             }
+
+            if (drawFrame)
+            {
+                Graphics.DrawFrame(craftWindowRect, Color.Yellow, 1);
+            }
+
+            //File.WriteAllText(Path.Combine(DirectoryFullName, "craftDump.txt"), dumpSb.ToString());
         }
 
         private readonly Stopwatch _inventSeedsDelayStopwatch = Stopwatch.StartNew();

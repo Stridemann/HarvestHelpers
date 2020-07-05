@@ -32,10 +32,6 @@ namespace HarvestHelpers.HarvestObjects
             {
                 error = "Turned off";
             }
-            else if (!AutoIrrigating)
-            {
-                error = "Auto-disperse off";
-            }
 
             return error;
         }
