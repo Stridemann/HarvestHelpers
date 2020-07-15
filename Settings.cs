@@ -33,5 +33,7 @@ namespace HarvestHelpers
         public bool DrawStorage { get; set; } = true;
         public bool DrawLinks { get; set; } = true;
         public bool DrawSeeds { get; set; } = true;
+        public bool DrawHorticrafting { get; set; } = true;
+        public bool DrawFlower { get; set; } = true;
     }
 }

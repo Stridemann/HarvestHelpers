@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
@@ -208,18 +209,22 @@ namespace HarvestHelpers
                 drawRect.X += drawRect.Width;
             }
 
-            if (_inventSeedsDelayStopwatch.ElapsedMilliseconds < 2000)
+            if (_inventSeedsDelayStopwatch.ElapsedMilliseconds < 500)
                 return;
             _inventSeedsDelayStopwatch.Restart();
 
-            var items =
+            var inventoryItems =
                 GameController.Game.IngameState.ServerData.GetPlayerInventoryBySlot(InventorySlotE.MainInventory1);
+
+            var seedStockPile = GameController.Game.IngameState.ServerData.PlayerInventories[42].Inventory;
+
+            var items = inventoryItems.Items.Concat(seedStockPile.Items);
 
             _inventSeeds[0] = 0;
             _inventSeeds[1] = 0;
             _inventSeeds[2] = 0; //just for T1
 
-            foreach (var item in items.Items)
+            foreach (var item in items)
             {
                 var metadata = item.Metadata;
                 if (!metadata.StartsWith("Metadata/Items/Harvest/HarvestSeed"))
@@ -391,6 +396,12 @@ namespace HarvestHelpers
 
             buttonPos.Y += 20;
             Settings.DrawSeeds = DrawButton("O", buttonPos, Settings.DrawSeeds);
+
+            buttonPos.Y += 20;
+            Settings.DrawHorticrafting = DrawButton("H", buttonPos, Settings.DrawHorticrafting);
+
+            buttonPos.Y += 20;
+            Settings.DrawFlower = DrawButton("F", buttonPos, Settings.DrawFlower);
         }
 
         private bool DrawButton(string name, Vector2 pos, bool value)
@@ -425,6 +436,10 @@ namespace HarvestHelpers
                 _objects[entity.Id] = new HarvestPylon(entity, _mapController);
             else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/HarvestPipeBeamEffect")
                 _objects[entity.Id] = new HarvestBeamLink(entity, _mapController);
+            else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/CraftingSilo")
+                _objects[entity.Id] = new HarvestHorticraft(entity, _mapController);
+            else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/HarvestPlantBooster")
+                _objects[entity.Id] = new HarvestFlower(entity, _mapController);
             else if (entity.Path == "Metadata/Terrain/Leagues/Harvest/Objects/SoulTree")
             {
                 _groveCenter = entity.GridPos;
