@@ -37,13 +37,10 @@ namespace HarvestHelpers
         private MapController _mapController;
         private readonly Stopwatch _updateStopwatch = Stopwatch.StartNew();
         private readonly StringBuilder _errorStringBuilder = new StringBuilder();
-        private readonly long[] _availableFluid = new long[3];
         private readonly long[] _requiredFluid = new long[3];
         private readonly long[] _fluidAmount = new long[3];
         private readonly long[] _fluidCapacity = new long[3];
         private readonly Color[] _fluidColors;
-
-        private readonly List<Tuple<string, string, Color>> _craftListHighlight;
 
         public HarvestHelpersCore()
         {
@@ -52,12 +49,6 @@ namespace HarvestHelpers
                 Constants.Purple,
                 Constants.Yellow,
                 Constants.Blue,
-            };
-
-            _craftListHighlight = new List<Tuple<string, string, Color>>
-            {
-                new Tuple<string, string, Color>("<white>{Change} a <white>{Unique}", "Roll unique", Color.Orange),
-                new Tuple<string, string, Color>("<white>{Randomise} the numeric values", "Randomize values", Color.White),
             };
         }
 
@@ -91,7 +82,8 @@ namespace HarvestHelpers
 
         public override void Render()
         {
-            DrawInventSeeds();
+            if (Settings.ShowInInvent.Value)
+                DrawInventSeeds();
             var isOnMap = Vector2.Distance(GameController.Player.GridPos, _groveCenter) < 400;
             if (!isOnMap)
             {
@@ -102,7 +94,6 @@ namespace HarvestHelpers
                 Settings.IsShown = !Settings.IsShown;
 
             UpdateAndValidate();
-            CheckCraftWindow();
 
             if (!Settings.IsShown)
             {
@@ -143,51 +134,6 @@ namespace HarvestHelpers
             ImGui.End();
         }
 
-        private void CheckCraftWindow()
-        {
-            var craftWindow = GameController.Game.IngameState.IngameUi.ReadObjectAt<Element>(0x790);
-            if (!craftWindow.IsVisible)
-                return;
-
-            var craftWindowRect = craftWindow.GetClientRect();
-            var drawTextPos = craftWindowRect.TopRight;
-
-            var craftList = craftWindow.ReadObjectAt<Element>(0x2A8);
-            //var dumpSb = new StringBuilder();
-            var drawFrame = false;
-            foreach (var craftListChild in craftList.Children)
-            {
-                if (craftListChild.ChildCount < 4)
-                    continue;
-
-                var craftText = craftListChild[3].Text;
-                //dumpSb.AppendLine(craftText);
-
-                foreach (var tuple in _craftListHighlight)
-                {
-                    if (craftText.StartsWith(tuple.Item1))
-                    {
-                        drawFrame = true;
-                        Graphics.DrawText(tuple.Item2, drawTextPos, tuple.Item3, 20);
-                        drawTextPos.Y += 20;
-                    }
-                }
-
-                if (!craftText.StartsWith("<white>{Reforge}") && !craftText.StartsWith("<white>{Remove}") &&
-                    !craftText.StartsWith("<white>{Randomise}"))
-                {
-                    drawFrame = true;
-                }
-            }
-
-            if (drawFrame)
-            {
-                Graphics.DrawFrame(craftWindowRect, Color.Yellow, 1);
-            }
-
-            //File.WriteAllText(Path.Combine(DirectoryFullName, "craftDump.txt"), dumpSb.ToString());
-        }
-
         private readonly Stopwatch _inventSeedsDelayStopwatch = Stopwatch.StartNew();
         private readonly int[] _inventSeeds = new int[3 * 4];
 
@@ -222,6 +168,10 @@ namespace HarvestHelpers
             foreach (var item in items.Items)
             {
                 var metadata = item.Metadata;
+
+                if (string.IsNullOrEmpty(metadata))
+                    continue;
+
                 if (!metadata.StartsWith("Metadata/Items/Harvest/HarvestSeed"))
                     continue;
 
@@ -283,9 +233,6 @@ namespace HarvestHelpers
                 _updateStopwatch.Restart();
                 _errorStringBuilder.Clear();
 
-                _availableFluid[0] = 0;
-                _availableFluid[1] = 0;
-                _availableFluid[2] = 0;
                 _requiredFluid[0] = 0;
                 _requiredFluid[1] = 0;
                 _requiredFluid[2] = 0;
@@ -303,7 +250,6 @@ namespace HarvestHelpers
                     var energyType = harvestObject.EnergyType - 1;
                     if (energyType >= 0 && energyType < 3)
                     {
-                        _availableFluid[energyType] += harvestObject.AvailableFluid;
                         _requiredFluid[energyType] += harvestObject.RequiredFluid;
                         _fluidAmount[energyType] += harvestObject.FluidAmount;
                         _fluidCapacity[energyType] += harvestObject.FluidCapacity;
@@ -322,7 +268,7 @@ namespace HarvestHelpers
 
             for (var i = 0; i < 3; i++)
             {
-                var result = _availableFluid[i] - _requiredFluid[i];
+                var result = _fluidAmount[i] - _requiredFluid[i];
                 var rect = new RectangleF(drawPos.X + (i - 1) * barWidth - barWidth / 2, drawPos.Y, barWidth - 2, 20);
                 var isFine = result > 0;
 
@@ -336,7 +282,7 @@ namespace HarvestHelpers
                 //Graphics.DrawFrame(rect, isFine ? Color.Green : Color.Red, 2);
 
                 var testPos = new nuVector2(rect.X + 5, rect.Y - 15);
-                var textSize = Graphics.DrawText($"Available: {_availableFluid[i]} Required:{_requiredFluid[i]}",
+                var textSize = Graphics.DrawText($"Required:{_requiredFluid[i]}",
                     testPos, isFine ? Color.White : Color.Red);
                 Graphics.DrawBox(new RectangleF(testPos.X, testPos.Y, textSize.X, textSize.Y), Color.Black);
 
@@ -411,7 +357,7 @@ namespace HarvestHelpers
 
             if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/MonsterSeed")
                 _objects[entity.Id] = new HarvestSeed(entity, _mapController);
-            else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/StorageTank")
+            else if (entity.Path.StartsWith("Metadata/MiscellaneousObjects/Harvest/StorageTank"))
                 _objects[entity.Id] = new HarvestTank(entity, _mapController);
             else if (entity.Path == "Metadata/MiscellaneousObjects/Harvest/Extractor")
                 _objects[entity.Id] = new HarvestCollector(entity, _mapController);
