@@ -11,7 +11,7 @@ namespace HarvestHelpers
         public const float GRID_WIDTH = 448 + GRID_BORDER * 2;
 
         public static Color Blue = Color.SkyBlue;
-        public static Color Purple = Color.Purple;
+        public static Color Purple = Color.HotPink;
         public static Color Yellow = Color.Yellow;
         public static Color Neutral = Color.Red;
         public static Color OutOfRange = Color.Red;

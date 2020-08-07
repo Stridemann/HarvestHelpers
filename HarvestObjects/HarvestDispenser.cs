@@ -17,7 +17,7 @@ namespace HarvestHelpers.HarvestObjects
             if (!MapController.Settings.DrawDispensers)
                 return;
 
-            MapController.DrawFrameOnMap(ScreenDrawPos, 4.9f, 2, EnergyColor);
+            //MapController.DrawFrameOnMap(ScreenDrawPos, 4.9f, 2, EnergyColor);
             MapController.DrawBoxOnMap(ScreenDrawPos, 0.8f, EnergyColor);
             MapController.DrawTextOnMap("D", ScreenDrawPos, Color.Black, 15, FontAlign.Center);
         }
@@ -28,10 +28,10 @@ namespace HarvestHelpers.HarvestObjects
         {
             var error = string.Empty;
 
-            if (CurrentState == 0 && RequiredFluid != 0 && RequiredFluid < AvailableFluid)
-            {
-                error = "Turned off";
-            }
+            //if (CurrentState == 0 && RequiredFluid != 0 && RequiredFluid < AvailableFluid)
+            //{
+            //    error = "Turned off";
+            //}
 
             return error;
         }

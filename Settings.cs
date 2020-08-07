@@ -12,6 +12,9 @@ namespace HarvestHelpers
         [Menu("Update interval (milliseconds)")]
         public RangeNode<int> UpdateDelayMs { get; set; } = new RangeNode<int>(1000, 0, 10000);
 
+        [Menu("Storage Tank Width")]
+        public RangeNode<float> StorageBoxWidth { get; set; } = new RangeNode<float>(200f, 0f, 1000f);
+
         public float PosX { get; set; } = 100;
         public float PosY { get; set; } = 100;
         public float Width { get; set; } = 500;
@@ -33,5 +36,7 @@ namespace HarvestHelpers
         public bool DrawStorage { get; set; } = true;
         public bool DrawLinks { get; set; } = true;
         public bool DrawSeeds { get; set; } = true;
+        public bool DrawHorticrafting { get; set; } = true;
+        public bool DrawFlower { get; set; } = true;
     }
 }
